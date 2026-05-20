@@ -5,7 +5,7 @@ import axios from 'axios';
 import { LogOut, ShieldAlert, Users, History, Eye, X, Check } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
-// 1. AQUI DEFINIMOS LA VARIABLE INTELIGENTE PARA PRODUCCIÓN
+// 1. VARIABLE INTELIGENTE RESTAURADA AQUÍ
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface Reporte {
@@ -30,13 +30,22 @@ interface AuditLog {
 
 const formatFolio = (id: number) => `Folio #${id.toString().padStart(4, '0')}`;
 
-const getStatusColor = (estado: string) => {
+const getStatusClass = (estado: string) => {
   switch(estado) {
-    case 'Pendiente': return { bg: '#FEF3C7', color: '#92400E' };
-    case 'En Proceso': return { bg: '#DBEAFE', color: '#1E40AF' };
-    case 'Resuelto': return { bg: '#D1FAE5', color: '#065F46' };
-    case 'Cancelado': return { bg: '#FEE2E2', color: '#991B1B' };
-    default: return { bg: '#F3F4F6', color: '#374151' };
+    case 'Pendiente': return 'status-pendiente';
+    case 'En Proceso': return 'status-proceso';
+    case 'Resuelto': return 'status-resuelto';
+    case 'Cancelado': return 'status-cancelado';
+    default: return 'status-default';
+  }
+};
+
+const getPriorityClass = (prioridad: string) => {
+  switch(prioridad) {
+    case 'Alta': return 'priority-alta';
+    case 'Media': return 'priority-media';
+    case 'Baja': return 'priority-baja';
+    default: return '';
   }
 };
 
@@ -90,16 +99,16 @@ const ReporteRow = ({
   };
 
   return (
-    <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
-      <td style={{ padding: '1rem', fontWeight: 600 }}>{formatFolio(reporte.id)}</td>
-      <td style={{ padding: '1rem', maxWidth: '200px' }}>
-        <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reporte.asunto}</div>
+    <tr className="border-b-light">
+      <td className="cell-p font-semibold">{formatFolio(reporte.id)}</td>
+      <td className="cell-p max-w-400">
+        <div className="font-medium truncate-1">{reporte.asunto}</div>
       </td>
-      <td style={{ padding: '1rem' }}>
+      <td className="cell-p">
         <select 
           value={estado} 
           onChange={(e) => handleSelectChange(setEstado, e.target.value)}
-          className="form-control" style={{ padding: '0.4rem', fontSize: '0.85rem', backgroundColor: getStatusColor(estado).bg, color: getStatusColor(estado).color, fontWeight: 600, border: '1px solid transparent' }}
+          className={`form-control py-04 px-08 text-sm font-semibold border-transparent ${getStatusClass(estado)}`}
         >
           <option value="Pendiente">Pendiente</option>
           <option value="En Proceso">En Proceso</option>
@@ -107,22 +116,22 @@ const ReporteRow = ({
           <option value="Cancelado">Cancelado</option>
         </select>
       </td>
-      <td style={{ padding: '1rem' }}>
+      <td className="cell-p">
         <select 
           value={prioridad} 
           onChange={(e) => handleSelectChange(setPrioridad, e.target.value)}
-          className="form-control" style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+          className="form-control py-04 px-08 text-sm"
         >
           <option value="Baja">Baja</option>
           <option value="Media">Media</option>
           <option value="Alta">Alta</option>
         </select>
       </td>
-      <td style={{ padding: '1rem' }}>
+      <td className="cell-p">
         <select 
           value={dependencia} 
           onChange={(e) => handleSelectChange(setDependencia, e.target.value)}
-          className="form-control" style={{ padding: '0.4rem', fontSize: '0.85rem', width: '180px' }}
+          className="form-control py-04 px-08 text-sm col-dependencia"
         >
           <option value="">Seleccionar...</option>
           <option value="Obras Públicas">Obras Públicas</option>
@@ -131,23 +140,23 @@ const ReporteRow = ({
           <option value="Tránsito">Tránsito</option>
         </select>
       </td>
-      <td style={{ padding: '1rem', textAlign: 'center' }}>
+      <td className="cell-p text-center">
         {isModified ? (
           <button 
             onClick={handleApply}
             disabled={isSaving}
-            style={{ padding: '0.4rem 0.8rem', backgroundColor: 'var(--color-dorado)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+            className="btn-apply"
           >
             <Check size={16} /> Aplicar
           </button>
         ) : (
-          <span style={{ fontSize: '0.85rem', color: 'var(--color-texto-secundario)' }}>-</span>
+          <span className="text-sm text-secondary">-</span>
         )}
       </td>
-      <td style={{ padding: '1rem' }}>
+      <td className="cell-p">
         <button 
           onClick={() => onViewDetails(reporte)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-guinda)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}
+          className="btn-action-icon text-guinda"
         >
           <Eye size={18} /> Detalles
         </button>
@@ -165,6 +174,8 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   
   const [activeTab, setActiveTab] = useState<'reportes'|'auditoria'|'registro'>('reportes');
+  
+  // 2. COMA RESTAURADA PARA EVITAR ERROR EN NETLIFY
   const [, setSocket] = useState<Socket | null>(null);
   
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -176,7 +187,7 @@ const AdminDashboard = () => {
 
   const fetchReportes = async () => {
     try {
-      // 2. APLICADO AQUI
+      // 3. URL DINÁMICA
       const res = await axios.get(`${API_URL}/api/admin/reportes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -186,7 +197,7 @@ const AdminDashboard = () => {
 
   const fetchLogs = async () => {
     try {
-      // 3. APLICADO AQUI
+      // 4. URL DINÁMICA
       const res = await axios.get(`${API_URL}/api/admin/audit`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -206,7 +217,7 @@ const AdminDashboard = () => {
       fetchLogs();
     }
 
-    // 4. APLICADO AQUI (SOCKET)
+    // 5. URL DINÁMICA (SOCKET)
     const newSocket = io(API_URL, {
       query: { token }
     });
@@ -226,7 +237,7 @@ const AdminDashboard = () => {
   }, [user, navigate, token]);
 
   const updateReporteValues = async (id: number, estado: string, prioridad: string, dependencia: string) => {
-    // 5. APLICADO AQUI
+    // 6. URL DINÁMICA
     await axios.put(`${API_URL}/api/admin/reportes/${id}`, { estado, prioridad, dependencia }, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -235,7 +246,7 @@ const AdminDashboard = () => {
   const handleRegisterAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // 6. APLICADO AQUI
+      // 7. URL DINÁMICA
       await axios.post(`${API_URL}/api/admin/register`, {
         nombre: newAdminNombre,
         email: newAdminEmail,
@@ -251,51 +262,51 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex-col">
       <header className="header-bar">
         <div className="header-title">
           <ShieldAlert size={24} />
           <span>Ventanilla <span className="gold-accent">Admin</span></span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <span style={{ fontWeight: 500, opacity: 0.9 }}>Hola, {user?.nombre} ({user?.role})</span>
-          <button onClick={() => { logout(); navigate('/login'); }} className="btn" style={{ padding: '0.5rem 1rem', backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
-            <LogOut size={18} style={{ marginRight: '0.5rem' }} /> Salir
+        <div className="flex items-center gap-15">
+          <span className="font-medium opacity-90">Hola, {user?.nombre} ({user?.role})</span>
+          <button onClick={() => { logout(); navigate('/login'); }} className="btn bg-white-10 text-white border-white-20 py-04 px-1">
+            <LogOut size={18} className="mr-05" /> Salir
           </button>
         </div>
       </header>
       
-      <main style={{ flex: 1, padding: '2rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-          <button onClick={() => setActiveTab('reportes')} className={`btn ${activeTab === 'reportes' ? 'btn-primary' : 'glass-panel'}`} style={activeTab !== 'reportes' ? { color: 'var(--color-texto)'} : {}}>
+      <main className="flex-1 p-2 max-w-1400 mx-auto w-full">
+        <div className="flex gap-1 mb-2">
+          <button onClick={() => setActiveTab('reportes')} className={`btn ${activeTab === 'reportes' ? 'btn-primary' : 'glass-panel text-primary'}`}>
             Gestión de Reportes
           </button>
           {user?.role === 'SuperAdmin' && (
             <>
-              <button onClick={() => setActiveTab('auditoria')} className={`btn ${activeTab === 'auditoria' ? 'btn-primary' : 'glass-panel'}`} style={activeTab !== 'auditoria' ? { color: 'var(--color-texto)'} : {}}>
-                <History size={18} style={{ marginRight: '0.5rem' }}/> Auditoría
+              <button onClick={() => setActiveTab('auditoria')} className={`btn ${activeTab === 'auditoria' ? 'btn-primary' : 'glass-panel text-primary'}`}>
+                <History size={18} className="mr-05"/> Auditoría
               </button>
-              <button onClick={() => setActiveTab('registro')} className={`btn ${activeTab === 'registro' ? 'btn-primary' : 'glass-panel'}`} style={activeTab !== 'registro' ? { color: 'var(--color-texto)'} : {}}>
-                <Users size={18} style={{ marginRight: '0.5rem' }}/> Registrar Admin
+              <button onClick={() => setActiveTab('registro')} className={`btn ${activeTab === 'registro' ? 'btn-primary' : 'glass-panel text-primary'}`}>
+                <Users size={18} className="mr-05"/> Registrar Admin
               </button>
             </>
           )}
         </div>
 
         {activeTab === 'reportes' && (
-          <div className="glass-panel animate-fade-in" style={{ padding: '2rem' }}>
-            <h2 style={{ color: 'var(--color-guinda-dark)', marginBottom: '1.5rem' }}>Todos los Reportes</h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="glass-panel animate-fade-in p-2">
+            <h2 className="text-guinda-dark mb-15">Todos los Reportes</h2>
+            <div className="table-responsive">
+              <table className="admin-table">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--color-dorado)' }}>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Folio</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Asunto</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Estado</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Prioridad</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Dependencia</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)', textAlign: 'center' }}>Acciones</th>
-                    <th style={{ padding: '1rem', color: 'var(--color-texto-secundario)' }}>Detalles</th>
+                  <tr className="border-b-gold">
+                    <th className="cell-p text-secondary">Folio</th>
+                    <th className="cell-p text-secondary">Asunto</th>
+                    <th className="cell-p text-secondary">Estado</th>
+                    <th className="cell-p text-secondary">Prioridad</th>
+                    <th className="cell-p text-secondary">Dependencia</th>
+                    <th className="cell-p text-secondary text-center">Acciones</th>
+                    <th className="cell-p text-secondary">Detalles</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -314,27 +325,27 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'auditoria' && user?.role === 'SuperAdmin' && (
-          <div className="glass-panel animate-fade-in" style={{ padding: '2rem' }}>
-            <h2 style={{ color: 'var(--color-guinda-dark)', marginBottom: '1.5rem' }}>Historial de Cambios (Audit Logs)</h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="glass-panel animate-fade-in p-2">
+            <h2 className="text-guinda-dark mb-15">Historial de Cambios (Audit Logs)</h2>
+            <div className="table-responsive">
+              <table className="admin-table">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--color-dorado)' }}>
-                    <th style={{ padding: '1rem' }}>ID</th>
-                    <th style={{ padding: '1rem' }}>Fecha</th>
-                    <th style={{ padding: '1rem' }}>Admin</th>
-                    <th style={{ padding: '1rem' }}>Acción</th>
-                    <th style={{ padding: '1rem' }}>Detalles</th>
+                  <tr className="border-b-gold">
+                    <th className="cell-p">ID</th>
+                    <th className="cell-p">Fecha</th>
+                    <th className="cell-p">Admin</th>
+                    <th className="cell-p">Acción</th>
+                    <th className="cell-p">Detalles</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map(log => (
-                    <tr key={log.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                      <td style={{ padding: '1rem' }}>{log.id}</td>
-                      <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{new Date(log.createdAt).toLocaleString()}</td>
-                      <td style={{ padding: '1rem', fontWeight: 600 }}>{log.admin.nombre}</td>
-                      <td style={{ padding: '1rem', fontWeight: 600, color: 'var(--color-guinda)' }}>{log.accion}</td>
-                      <td style={{ padding: '1rem' }}>{log.detalles}</td>
+                    <tr key={log.id} className="border-b-light">
+                      <td className="cell-p">{log.id}</td>
+                      <td className="cell-p text-sm">{new Date(log.createdAt).toLocaleString()}</td>
+                      <td className="cell-p font-semibold">{log.admin.nombre}</td>
+                      <td className="cell-p font-semibold text-guinda">{log.accion}</td>
+                      <td className="cell-p">{log.detalles}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -344,10 +355,10 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'registro' && user?.role === 'SuperAdmin' && (
-          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', maxWidth: '500px' }}>
-            <h2 style={{ color: 'var(--color-guinda-dark)', marginBottom: '1.5rem' }}>Registrar Administrador</h2>
+          <div className="glass-panel animate-fade-in p-2 max-w-500">
+            <h2 className="text-guinda-dark mb-15">Registrar Administrador</h2>
             {registerMsg && (
-              <div style={{ backgroundColor: registerMsg.includes('exitosamente') ? '#D1FAE5' : '#FEE2E2', color: registerMsg.includes('exitosamente') ? '#065F46' : '#991B1B', padding: '0.75rem', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem' }}>
+              <div className={`alert ${registerMsg.includes('exitosamente') ? 'alert-success' : 'alert-error'}`}>
                 {registerMsg}
               </div>
             )}
@@ -372,51 +383,46 @@ const AdminDashboard = () => {
 
       {/* Modal Detalles del Reporte */}
       {selectedReporte && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          padding: '1rem'
-        }}>
-          <div className="glass-panel animate-fade-in" style={{ backgroundColor: '#fff', width: '100%', maxWidth: '600px', padding: '2rem', borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '1rem' }}>
+        <div className="modal-overlay">
+          <div className="glass-panel animate-fade-in bg-white w-full max-w-600 p-2 rounded-lg shadow-modal">
+            <div className="flex-start mb-15 border-b-light pb-1">
               <div>
-                <h2 style={{ margin: 0, color: 'var(--color-guinda)', fontSize: '1.5rem', fontWeight: 700 }}>{formatFolio(selectedReporte.id)}</h2>
-                <div style={{ color: 'var(--color-texto-secundario)', marginTop: '0.25rem' }}>{new Date(selectedReporte.createdAt).toLocaleString()}</div>
+                <h2 className="m-0 text-guinda text-xl font-bold">{formatFolio(selectedReporte.id)}</h2>
+                <div className="text-secondary mt-025">{new Date(selectedReporte.createdAt).toLocaleString()}</div>
               </div>
-              <button onClick={() => setSelectedReporte(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-texto-secundario)', padding: '0.25rem' }}>
+              <button onClick={() => setSelectedReporte(null)} className="bg-transparent border-none cursor-pointer text-secondary p-025">
                 <X size={24} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className="flex-col gap-15">
               <div>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-guinda-dark)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Información del Ciudadano</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                <h4 className="m-0 mb-05 text-guinda-dark text-sm uppercase tracking-wide">Información del Ciudadano</h4>
+                <div className="grid-2-col bg-light p-1 rounded-md border-light">
                   <div><strong>Nombre:</strong> {selectedReporte.usuario.nombre}</div>
                   <div><strong>Teléfono:</strong> {selectedReporte.usuario.telefono}</div>
-                  <div style={{ gridColumn: '1 / -1' }}><strong>Email:</strong> {selectedReporte.usuario.email}</div>
+                  <div className="col-span-full"><strong>Email:</strong> {selectedReporte.usuario.email}</div>
                 </div>
               </div>
 
               <div>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-guinda-dark)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Detalles del Reporte</h4>
-                <div style={{ backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                  <div style={{ marginBottom: '0.75rem' }}><strong>Asunto:</strong> {selectedReporte.asunto}</div>
-                  <div style={{ marginBottom: '1rem' }}>
+                <h4 className="m-0 mb-05 text-guinda-dark text-sm uppercase tracking-wide">Detalles del Reporte</h4>
+                <div className="bg-light p-1 rounded-md border-light">
+                  <div className="mb-05"><strong>Asunto:</strong> {selectedReporte.asunto}</div>
+                  <div className="mb-1">
                     <strong>Descripción:</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', color: 'var(--color-texto-secundario)', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{selectedReporte.descripcion}</p>
+                    <p className="m-0 mt-05 text-secondary pre-wrap">{selectedReporte.descripcion}</p>
                   </div>
-                  <div style={{ display: 'flex', gap: '2rem', borderTop: '1px solid #E5E7EB', paddingTop: '1rem', flexWrap: 'wrap' }}>
+                  <div className="flex gap-2 border-t-light pt-1 flex-wrap">
                     <div>
                       <strong>Estado: </strong> 
-                      <span style={{ padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600, backgroundColor: getStatusColor(selectedReporte.estado).bg, color: getStatusColor(selectedReporte.estado).color }}>
+                      <span className={`py-02 px-06 rounded-full text-xs font-semibold ${getStatusClass(selectedReporte.estado)}`}>
                         {selectedReporte.estado}
                       </span>
                     </div>
                     <div>
                       <strong>Prioridad: </strong>
-                      <span style={{ fontWeight: 600, color: selectedReporte.prioridad === 'Alta' ? '#991B1B' : selectedReporte.prioridad === 'Media' ? '#D97706' : '#059669' }}>
+                      <span className={`font-semibold ${getPriorityClass(selectedReporte.prioridad)}`}>
                         {selectedReporte.prioridad}
                       </span>
                     </div>
@@ -429,7 +435,7 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
+            <div className="flex justify-end mt-2">
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedReporte(null)}>
                 Cerrar Detalles
               </button>

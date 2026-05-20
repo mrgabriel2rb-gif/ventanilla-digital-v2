@@ -1,23 +1,22 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Eye, EyeOff } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
 
-// 1. VARIABLE INTELIGENTE AÑADIDA AQUÍ
+// 1. VARIABLE INTELIGENTE RESTAURADA AQUÍ
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Login = () => {
-  const location = useLocation();
-  const [email, setEmail] = useState(location.state?.email || '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useContext(AuthContext);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       // 2. URL DINÁMICA APLICADA AQUÍ
@@ -39,20 +38,26 @@ const Login = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '400px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ color: 'var(--color-guinda)', fontSize: '1.75rem', fontWeight: 700 }}>Iniciar Sesión</h2>
-          <p style={{ color: 'var(--color-texto-secundario)', marginTop: '0.5rem' }}>Bienvenido a la Ventanilla Digital</p>
+    <div className="animate-fade-in min-h-screen flex-center p-2">
+      <div className="glass-panel p-25 w-full max-w-400">
+        <div className="text-center mb-2">
+          <h2 className="text-guinda text-2xl font-bold">Iniciar Sesión</h2>
+          <p className="text-secondary mt-05">Bienvenido a la Ventanilla Digital</p>
         </div>
-        
+
         {error && (
-          <div style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.75rem', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+          <div className="alert alert-error">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        {location.state?.message && (
+          <div className="alert alert-success">
+            {location.state.message}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin}>
           <div className="form-group">
             <label className="form-label">Correo Electrónico</label>
             <input 
@@ -61,7 +66,6 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
-              placeholder="tu@email.com"
             />
           </div>
           
@@ -69,31 +73,33 @@ const Login = () => {
             <label className="form-label">Contraseña</label>
             <div className="input-icon-wrapper">
               <input 
-                type={showPassword ? 'text' : 'password'} 
+                type={showPassword ? "text" : "password"} 
                 className="form-control" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
-                placeholder="••••••••"
               />
-              <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+              <div 
+                className="input-icon" 
+                onClick={() => setShowPassword(!showPassword)}
+              >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </span>
+              </div>
             </div>
           </div>
-          
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-            Ingresar
+
+          <button type="submit" className="btn btn-primary w-full mt-1">
+            Entrar
           </button>
         </form>
-        
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
-          <span style={{ color: 'var(--color-texto-secundario)' }}>¿No tienes cuenta? </span>
+
+        <div className="text-center mt-15 text-sm">
+          <span className="text-secondary">¿No tienes cuenta? </span>
           <span 
-            style={{ color: 'var(--color-dorado)', fontWeight: 600, cursor: 'pointer' }}
+            className="text-dorado font-semibold cursor-pointer"
             onClick={() => navigate('/register')}
           >
-            Regístrate aquí
+            Regístrate
           </span>
         </div>
       </div>

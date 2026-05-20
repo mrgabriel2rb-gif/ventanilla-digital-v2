@@ -1,72 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
 
-// 1. VARIABLE INTELIGENTE AÑADIDA AQUÍ
+// 1. VARIABLE INTELIGENTE RESTAURADA AQUÍ
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Register = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
   const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState(location.state?.email || '');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(false);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Solo números
-    if (value.length <= 10) {
-      setTelefono(value);
+  useEffect(() => {
+    if (location.state?.email) {
+      setEmail(location.state.email);
+      setError('Usuario no encontrado. Por favor, regístrate.');
     }
-  };
+  }, [location.state]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     
-    if (telefono.length !== 10) {
-      setError('El teléfono debe tener estrictamente 10 dígitos.');
+    // Strict 10-digit validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(telefono)) {
+      setError('El teléfono debe contener exactamente 10 dígitos numéricos.');
       return;
     }
 
     try {
       // 2. URL DINÁMICA APLICADA AQUÍ
       await axios.post(`${API_URL}/api/auth/register`, {
-        nombre, email, password, telefono
+        nombre, email, telefono, password
       });
-      setSuccess('Registro exitoso. Redirigiendo al login...');
-      setTimeout(() => navigate('/login', { state: { email } }), 2000);
+      setSuccess(true);
+      setError('');
+      setTimeout(() => {
+        navigate('/login', { state: { message: 'Registro exitoso. Ahora puedes iniciar sesión.' } });
+      }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al registrar el usuario');
+      setError(err.response?.data?.error || 'Error al registrar ciudadano');
     }
   };
 
   return (
-    <div className="animate-fade-in" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '450px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ color: 'var(--color-guinda)', fontSize: '1.75rem', fontWeight: 700 }}>Registro de Ciudadano</h2>
-          <p style={{ color: 'var(--color-texto-secundario)', marginTop: '0.5rem' }}>Crea tu cuenta para reportar incidencias</p>
+    <div className="animate-fade-in min-h-screen flex-center p-2">
+      <div className="glass-panel p-25 w-full max-w-450">
+        <div className="text-center mb-2">
+          <h2 className="text-guinda text-2xl font-bold">Registro de Ciudadano</h2>
+          <p className="text-secondary mt-05">Crea tu cuenta para reportar incidencias</p>
         </div>
-        
+
         {error && (
-          <div style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.75rem', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+          <div className="alert alert-error">
             {error}
           </div>
         )}
-        
+
         {success && (
-          <div style={{ backgroundColor: '#D1FAE5', color: '#065F46', padding: '0.75rem', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-            {success}
+          <div className="alert alert-success">
+            Registro completado. Redirigiendo al login...
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleRegister}>
           <div className="form-group">
             <label className="form-label">Nombre Completo</label>
             <input 
@@ -75,7 +79,6 @@ const Register = () => {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required 
-              placeholder="Juan Pérez"
             />
           </div>
 
@@ -87,54 +90,54 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
-              placeholder="tu@email.com"
             />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Teléfono (10 dígitos)</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={telefono}
-              onChange={handlePhoneChange}
-              required 
-              placeholder="5512345678"
-            />
-            <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
-              {telefono.length}/10 dígitos
-            </small>
           </div>
 
+          <div className="form-group">
+            <label className="form-label">Teléfono</label>
+            <input 
+              type="tel" 
+              className="form-control" 
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0,10))}
+              placeholder="10 dígitos"
+              required 
+            />
+            <small className="text-secondary text-xs mt-025">Ej. 9811234567 (Solo números)</small>
+          </div>
+          
           <div className="form-group">
             <label className="form-label">Contraseña</label>
             <div className="input-icon-wrapper">
               <input 
-                type={showPassword ? 'text' : 'password'} 
+                type={showPassword ? "text" : "password"} 
                 className="form-control" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
-                placeholder="••••••••"
+                minLength={6}
               />
-              <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+              <div 
+                className="input-icon" 
+                onClick={() => setShowPassword(!showPassword)}
+              >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </span>
+              </div>
             </div>
           </div>
-          
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-            Crear Cuenta
+
+          <button type="submit" className="btn btn-primary w-full mt-1">
+            Registrarme
           </button>
         </form>
-        
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
-          <span style={{ color: 'var(--color-texto-secundario)' }}>¿Ya tienes cuenta? </span>
+
+        <div className="text-center mt-15 text-sm">
+          <span className="text-secondary">¿Ya tienes cuenta? </span>
           <span 
-            style={{ color: 'var(--color-dorado)', fontWeight: 600, cursor: 'pointer' }}
+            className="text-dorado font-semibold cursor-pointer"
             onClick={() => navigate('/login')}
           >
-            Inicia sesión aquí
+            Iniciar Sesión
           </span>
         </div>
       </div>
