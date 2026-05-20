@@ -5,6 +5,9 @@ import axios from 'axios';
 import { LogOut, ShieldAlert, Users, History, Eye, X, Check } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
+// 1. AQUI DEFINIMOS LA VARIABLE INTELIGENTE PARA PRODUCCIÓN
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 interface Reporte {
   id: number;
   asunto: string;
@@ -173,7 +176,8 @@ const AdminDashboard = () => {
 
   const fetchReportes = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/reportes', {
+      // 2. APLICADO AQUI
+      const res = await axios.get(`${API_URL}/api/admin/reportes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReportes(res.data);
@@ -182,7 +186,8 @@ const AdminDashboard = () => {
 
   const fetchLogs = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/audit', {
+      // 3. APLICADO AQUI
+      const res = await axios.get(`${API_URL}/api/admin/audit`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setLogs(res.data);
@@ -201,7 +206,8 @@ const AdminDashboard = () => {
       fetchLogs();
     }
 
-    const newSocket = io('http://localhost:3000', {
+    // 4. APLICADO AQUI (SOCKET)
+    const newSocket = io(API_URL, {
       query: { token }
     });
 
@@ -220,7 +226,8 @@ const AdminDashboard = () => {
   }, [user, navigate, token]);
 
   const updateReporteValues = async (id: number, estado: string, prioridad: string, dependencia: string) => {
-    await axios.put(`http://localhost:3000/api/admin/reportes/${id}`, { estado, prioridad, dependencia }, {
+    // 5. APLICADO AQUI
+    await axios.put(`${API_URL}/api/admin/reportes/${id}`, { estado, prioridad, dependencia }, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
@@ -228,7 +235,8 @@ const AdminDashboard = () => {
   const handleRegisterAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/admin/register', {
+      // 6. APLICADO AQUI
+      await axios.post(`${API_URL}/api/admin/register`, {
         nombre: newAdminNombre,
         email: newAdminEmail,
         password: newAdminPassword

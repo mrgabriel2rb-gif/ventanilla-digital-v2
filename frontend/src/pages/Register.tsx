@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
 
+// 1. VARIABLE INTELIGENTE AÑADIDA AQUÍ
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const Register = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,7 +35,8 @@ const Register = () => {
     }
 
     try {
-      await axios.post('http://localhost:3000/api/auth/register', {
+      // 2. URL DINÁMICA APLICADA AQUÍ
+      await axios.post(`${API_URL}/api/auth/register`, {
         nombre, email, password, telefono
       });
       setSuccess('Registro exitoso. Redirigiendo al login...');

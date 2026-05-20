@@ -4,6 +4,9 @@ import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
 
+// 1. VARIABLE INTELIGENTE AÑADIDA AQUÍ
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const Login = () => {
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || '');
@@ -17,7 +20,8 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', { email, password });
+      // 2. URL DINÁMICA APLICADA AQUÍ
+      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       const { user, token } = response.data;
       login(user, token);
       if (user.type === 'admin') {

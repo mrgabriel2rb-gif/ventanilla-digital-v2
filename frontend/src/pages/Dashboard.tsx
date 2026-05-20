@@ -5,6 +5,9 @@ import { io, Socket } from 'socket.io-client';
 import { LogOut, PlusCircle, Activity, X } from 'lucide-react';
 import axios from 'axios';
 
+// 1. VARIABLE INTELIGENTE AÑADIDA AQUÍ
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 interface Reporte {
   id: number;
   asunto: string;
@@ -28,7 +31,8 @@ const Dashboard = () => {
 
   const fetchReportes = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/reportes/mis-reportes', {
+      // 2. URL DINÁMICA APLICADA AQUÍ
+      const response = await axios.get(`${API_URL}/api/reportes/mis-reportes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReportes(response.data);
@@ -47,7 +51,8 @@ const Dashboard = () => {
 
     fetchReportes();
 
-    const newSocket = io('http://localhost:3000', {
+    // 3. URL DINÁMICA APLICADA AL SOCKET AQUÍ
+    const newSocket = io(API_URL, {
       query: { token }
     });
 
@@ -78,7 +83,8 @@ const Dashboard = () => {
     setError('');
 
     try {
-      await axios.post('http://localhost:3000/api/reportes', { asunto, descripcion }, {
+      // 4. URL DINÁMICA APLICADA AQUÍ
+      await axios.post(`${API_URL}/api/reportes`, { asunto, descripcion }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false);
