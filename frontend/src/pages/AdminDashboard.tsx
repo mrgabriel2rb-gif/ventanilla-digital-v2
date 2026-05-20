@@ -165,7 +165,7 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   
   const [activeTab, setActiveTab] = useState<'reportes'|'auditoria'|'registro'>('reportes');
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminNombre, setNewAdminNombre] = useState('');

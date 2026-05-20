@@ -20,7 +20,7 @@ interface Reporte {
 const Dashboard = () => {
   const { user, logout, token } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
